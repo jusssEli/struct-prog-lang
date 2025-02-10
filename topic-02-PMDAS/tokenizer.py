@@ -2,7 +2,9 @@ import re
 
 # Define patterns for tokens
 patterns = [
-    [r"\d+", "number"],
+    [r"print","print"],
+    [r"\d*\.\d+|\d+\.\d*|\d+", "number"],
+    [r"[a-zA-Z_][a-zA-Z0-9_]*", "identifier"],  # identifiers
     [r"\+", "+"],
     [r"\-", "-"],
     [r"\*", "*"],
@@ -34,7 +36,10 @@ def tokenize(characters):
             "value":match.group(0)
         }
         if token["tag"] == "number":
-            token["value"] = int(token["value"])
+            if "." in token["value"]:
+                token["value"] = float(token["value"])
+            else:
+                token["value"] = int(token["value"])
         if token["tag"] != "whitespace":
             tokens.append(token)
         position = match.end()
@@ -62,7 +67,13 @@ def test_number_token():
         assert len(t) == 2
         assert t[0]["tag"] == "number"
         assert t[0]["value"] == int(s)
-    
+    for s in ["1.1","11.11","11.",".11"]:
+        t = tokenize(s)
+        assert len(t) == 2
+        assert t[0]["tag"] == "number"
+        assert t[0]["value"] == float(s)
+
+
 def test_multiple_tokens():
     print("test multiple tokens")
     tokens = tokenize("1+2")
@@ -72,6 +83,26 @@ def test_whitespace():
     print("test whitespace")
     tokens = tokenize("1 + 2")
     assert tokens == [{'tag': 'number', 'position': 0, 'value': 1}, {'tag': '+', 'position': 2, 'value': '+'}, {'tag': 'number', 'position': 4, 'value': 2}, {'tag': None, 'value': None, 'position': 5}]
+
+def test_keywords():
+    print("test keywords...")
+    for keyword in [
+        "print",
+    ]:
+        t = tokenize(keyword)
+        assert len(t) == 2
+        assert t[0]["tag"] == keyword, f"expected {keyword}, got {t[0]}"
+        assert "value" not in t
+
+def test_identifier_tokens():
+    print("test identifier tokens...")
+    for s in ["x", "y", "z", "alpha", "beta", "gamma"]:
+        t = tokenize(s)
+        assert len(t) == 2
+        assert t[0]["tag"] == "identifier"
+        assert t[0]["value"] == s
+
+
 
 def test_error():
     print("test error")
@@ -86,4 +117,6 @@ if __name__ == "__main__":
     test_number_token()
     test_multiple_tokens()
     test_whitespace()
+    test_keywords()
+    test_identifier_tokens()
     test_error()
